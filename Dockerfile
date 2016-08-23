@@ -4,7 +4,7 @@ MAINTAINER Xi Shen <davidshen84@gmail.com>
 COPY requirements.txt /app/
 RUN pip install --requirement /app/requirements.txt
 
-COPY main.py /app/
+COPY *.py /app/
 
 EXPOSE 80
 WORKDIR /app

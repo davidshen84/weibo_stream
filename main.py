@@ -1,3 +1,17 @@
+"""
+Weibo Streaming
+===============
+
+Turn `weibo`_ statues into a HTTP Stream.
+
+- Please refer to *weibo* `API documents`_ for detail weibo statuses API
+- Please refer to `chunked`_ encoding for how HTTP streaming implementation specification
+
+.. _weibo: http://www.weibo.com
+.. _API documents: http://open.weibo.com/wiki/%E5%BE%AE%E5%8D%9AAPI
+.. _chunked: https://en.wikipedia.org/wiki/Chunked_transfer_encoding
+"""
+
 import logging
 
 from tornado import gen
@@ -6,13 +20,11 @@ from tornado import web
 from tornado.escape import json_encode
 from tornado.options import define, options
 
-from . import Fib, WeiboClient
+from util import FibonacciSequence
+from weibo_client import WeiboClient
 
-weibo_public_timeline_url = 'https://api.weibo.com/2/statuses/public_timeline.json?access_token={}'
 access_logger = logging.getLogger('tornado.access')
 app_logger = logging.getLogger('tornado.application')
-sleep_duration_origin = 3
-sleep_duration_increase_factor = 2
 
 # chunked transfer encoding delimiter
 CRLF = '\r\n'
@@ -26,41 +38,43 @@ def remote_ip(request):
     return request.headers.get('X-Real-IP') or request.remote_ip
 
 
-# noinspection PyAbstractClass
 class MainHandler(web.RequestHandler):
+    def data_received(self, chunk):
+        raise NotImplementedError()
+
     def get(self):
         self.write('''
         access /public_timeline to get a weibo public status stream
         ''')
 
 
-# noinspection PyAbstractClass
 class PublicTimelineHandler(web.RequestHandler):
+    def data_received(self, chunk):
+        raise NotImplementedError()
+
     @gen.coroutine
     def get(self):
         client = WeiboClient(options.weibo_access_token)
         access_logger.info('start streaming to {}'.format(remote_ip(self.request)))
         self.set_header('transfer-encoding', 'chunked')
         self.set_header('content-type', 'application/json; charset=utf-8')
-        fib = Fib()
+        fib = FibonacciSequence(start_from=3)
 
         while True:
             statuses = yield client.public_timeline()
             if not self.request.connection.stream.closed():
                 statuses_count = len(statuses)
                 if statuses_count > 0:
-                    app_logger.info('received {} new statuses'.format(statuses_count))
                     for s in statuses:
                         chunked = json_encode(s)
                         chunked_size = len(chunked)
                         self.write('{:x}{}'.format(chunked_size + 1, CRLF))
                         self.write('{}\n{}'.format(chunked, CRLF))
                     self.flush()
-                    app_logger.info('last id updated to {}'.format(client.last_id))
                     fib.reset()
-                    sleep_duration = fib.next()
+                    sleep_duration = next(fib)
                 else:
-                    sleep_duration = fib.next()
+                    sleep_duration = next(fib)
                     app_logger.warn('no new statuses (sleeping {} seconds)'.format(sleep_duration))
 
                 yield gen.sleep(sleep_duration)
