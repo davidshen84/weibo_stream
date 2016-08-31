@@ -18,6 +18,7 @@ from tornado import gen
 from tornado import ioloop
 from tornado import web
 from tornado.escape import json_encode
+from tornado.httpclient import HTTPError
 from tornado.options import define, options
 
 from util import FibonacciSequence
@@ -55,37 +56,40 @@ class PublicTimelineHandler(web.RequestHandler):
     @gen.coroutine
     def get(self):
         client = WeiboClient(options.weibo_access_token)
-        access_logger.info('start streaming to {}'.format(remote_ip(self.request)))
+        access_logger.info('start streaming to %s', remote_ip(self.request))
         self.set_header('transfer-encoding', 'chunked')
         self.set_header('content-type', 'application/json; charset=utf-8')
         fib = FibonacciSequence(start_from=3)
 
-        while True:
-            statuses = yield client.public_timeline()
-            if not self.request.connection.stream.closed():
-                statuses_count = len(statuses)
-                if statuses_count > 0:
-                    for s in statuses:
-                        chunked = json_encode(s)
-                        chunked_size = len(chunked)
-                        self.write('{:x}{}'.format(chunked_size + 1, CRLF))
-                        self.write('{}\n{}'.format(chunked, CRLF))
-                    self.flush()
-                    fib.reset()
-                    sleep_duration = next(fib)
-                else:
-                    sleep_duration = next(fib)
-                    app_logger.warn('no new statuses (sleeping {} seconds)'.format(sleep_duration))
+        try:
+            while True:
+                statuses = yield client.public_timeline()
+                if not self.request.connection.stream.closed():
+                    statuses_count = len(statuses)
+                    if statuses_count > 0:
+                        for s in statuses:
+                            chunked = json_encode(s)
+                            chunked_size = len(chunked)
+                            self.write('{:x}{}'.format(chunked_size + 1, CRLF))
+                            self.write('{}\n{}'.format(chunked, CRLF))
+                        self.flush()
+                        fib.reset()
+                        sleep_duration = next(fib)
+                    else:
+                        sleep_duration = next(fib)
+                        app_logger.warn('no new statuses (sleeping %s seconds)', sleep_duration)
 
-                yield gen.sleep(sleep_duration)
-            else:
-                # access_logger.info('stop streaming to {}'.format(remote_ip(self.request))
-                return
-                # self.write('0' + CRLF)
-                # self.write(CRLF)
+                    yield gen.sleep(sleep_duration)
+                else:
+                    access_logger.info('stopped streaming to %s', remote_ip(self.request))
+                    break
+        except HTTPError as e:
+            app_logger.error('weibo api responded %s, %s, %s', e.code, e.message, e.response.body)
+            app_logger.warn('stream closed')
+            self.write('0' + CRLF * 2)
 
     def on_connection_close(self):
-        access_logger.info('close connection to {}'.format(remote_ip(self.request)))
+        access_logger.info('close connection to %s', remote_ip(self.request))
         self.finish()
 
 
