@@ -1,6 +1,7 @@
 class FibonacciSequence:
-    """
-Fibonacci sequence generator
+    """Fibonacci sequence generator
+
+    :param start_from: initialize the sequence from the `start_from`-th item
 
     >>> fib = FibonacciSequence()
     >>> next(fib)
@@ -13,6 +14,7 @@ Fibonacci sequence generator
     3
     >>> next(fib)
     5
+
     >>> fib.reset()
     >>> next(fib)
     1
@@ -23,11 +25,6 @@ Fibonacci sequence generator
     """
 
     def __init__(self, start_from: int = 0):
-        """
-Create an instance
-
-        :param start_from: initialize the sequence from the *start_from* item
-        """
         self._start_from = start_from
         self._a = self._b = 1
         self.reset()
@@ -42,8 +39,8 @@ Create an instance
         return fib
 
     def reset(self):
-        """
-Reset sequence generator to its original state
+        """Reset sequence generator to its original state
+
         """
         self._a = self._b = 1
         if self._start_from:

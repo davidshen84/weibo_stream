@@ -22,6 +22,13 @@ class WeiboClient(object):
 
     @gen.coroutine
     def public_timeline(self):
+        """Returns a **Future** of a list of statuses from the public timeline API.
+
+        * If the remote API response none 200 status code, the status code will be logged.
+        * If the remote API raise exception, it will be raised to upstream.
+
+        :rtype: []
+        """
         response = yield self._http_client.fetch(WeiboClient._weibo_public_timeline_url.format(self._access_token))
 
         if response.code == 200:
