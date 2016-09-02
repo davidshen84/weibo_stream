@@ -17,7 +17,7 @@ import logging
 from tornado import gen
 from tornado import ioloop
 from tornado import web
-from tornado.escape import json_encode
+from tornado.escape import json_encode, json_decode
 from tornado.httpclient import HTTPError
 from tornado.options import define, options
 
@@ -59,7 +59,7 @@ class PublicTimelineHandler(web.RequestHandler):
         access_logger.info('start streaming to %s', remote_ip(self.request))
         self.set_header('transfer-encoding', 'chunked')
         self.set_header('content-type', 'application/json; charset=utf-8')
-        fib = FibonacciSequence(start_from=3)
+        fib = FibonacciSequence(start_from=5)
 
         try:
             while True:
@@ -77,16 +77,24 @@ class PublicTimelineHandler(web.RequestHandler):
                         sleep_duration = next(fib)
                     else:
                         sleep_duration = next(fib)
-                        app_logger.warn('no new statuses (sleeping %s seconds)', sleep_duration)
+                        app_logger.warn('no new statuses')
 
+                    app_logger.info('sleep %d seconds', sleep_duration)
                     yield gen.sleep(sleep_duration)
                 else:
                     access_logger.info('stopped streaming to %s', remote_ip(self.request))
                     break
         except HTTPError as e:
-            app_logger.error('weibo api responded %s, %s, %s', e.code, e.message, e.response.body)
-            app_logger.warn('stream closed')
-            self.write('0' + CRLF * 2)
+            if e.code == 403:
+                json_body = json_decode(e.response.body)
+                if json_body['error_code'] == 10023:
+                    app_logger.warn('access token is blocked, sleep %d 30 minutes.')
+                    yield gen.sleep(30 * 60)
+            else:
+                app_logger.error('weibo api responded %s, %s, %s',
+                                 e.code, e.message, e.response.body if e.response else 'empty response')
+                app_logger.warn('stream closed')
+                self.write('0' + CRLF * 2)
 
     def on_connection_close(self):
         access_logger.info('close connection to %s', remote_ip(self.request))
