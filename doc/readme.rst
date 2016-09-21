@@ -13,7 +13,7 @@ Replace `some_token` with your Weibo API token.
 
 Common Usage: ::
 
-    curl --no-buffer --slient --get docker_host:port/public_timeline | tee -a status.log
+    curl --no-buffer --silent --get docker_host:port/public_timeline | tee -a status.log
 
 This command will display the statuses on the console, and at the same time save the statuses to `status.log` file.
 

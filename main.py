@@ -61,8 +61,8 @@ class PublicTimelineHandler(web.RequestHandler):
         self.set_header('content-type', 'application/json; charset=utf-8')
         fib = FibonacciSequence(start_from=5)
 
-        try:
-            while True:
+        while True:
+            try:
                 statuses = yield client.public_timeline()
                 if not self.request.connection.stream.closed():
                     statuses_count = len(statuses)
@@ -84,21 +84,22 @@ class PublicTimelineHandler(web.RequestHandler):
                 else:
                     access_logger.info('stopped streaming to %s', remote_ip(self.request))
                     break
-        except HTTPError as e:
-            if e.code == 403:
-                json_body = json_decode(e.response.body)
-                if json_body['error_code'] == 10023:
-                    app_logger.warn('access token is blocked, sleep %d 30 minutes.')
-                    yield gen.sleep(30 * 60)
-            else:
-                app_logger.error('weibo api responded %s, %s, %s',
-                                 e.code, e.message, e.response.body if e.response else 'empty response')
-                app_logger.warn('stream closed')
-                self.write('0' + CRLF * 2)
+            except HTTPError as e:
+                if e.code == 403:
+                    json_body = json_decode(e.response.body)
+                    if json_body['error_code'] == 10023:
+                        app_logger.warn('access token is blocked, sleep %d 30 minutes.')
+                        yield gen.sleep(30 * 60)
+                else:
+                    app_logger.error('weibo api responded %s, %s, %s',
+                                     e.code, e.message, e.response.body if e.response else 'empty response')
+                    app_logger.warn('stream closed')
+                    self.write('0' + CRLF * 2)
 
-    def on_connection_close(self):
-        access_logger.info('close connection to %s', remote_ip(self.request))
-        self.finish()
+
+def on_connection_close(self):
+    access_logger.info('close connection to %s', remote_ip(self.request))
+    self.finish()
 
 
 if __name__ == '__main__':
