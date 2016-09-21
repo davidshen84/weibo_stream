@@ -21,7 +21,7 @@ from tornado.escape import json_encode, json_decode
 from tornado.httpclient import HTTPError
 from tornado.options import define, options
 
-from util import FibonacciSequence
+from util import FibonacciSequence, remote_ip, CircularList
 from weibo_client import WeiboClient
 
 access_logger = logging.getLogger('tornado.access')
@@ -31,12 +31,9 @@ app_logger = logging.getLogger('tornado.application')
 CRLF = '\r\n'
 
 # define tornado command line arguments
-define('weibo_access_token')
+define('weibo_access_tokens', multiple=True)
+weibo_access_tokens = None
 define('debug', default=False)
-
-
-def remote_ip(request):
-    return request.headers.get('X-Real-IP') or request.remote_ip
 
 
 class MainHandler(web.RequestHandler):
@@ -50,12 +47,16 @@ class MainHandler(web.RequestHandler):
 
 
 class PublicTimelineHandler(web.RequestHandler):
+    """
+    Handles GET /public_timeline request.
+    """
+
     def data_received(self, chunk):
         raise NotImplementedError()
 
     @gen.coroutine
     def get(self):
-        client = WeiboClient(options.weibo_access_token)
+        client = WeiboClient(next(weibo_access_tokens))
         access_logger.info('start streaming to %s', remote_ip(self.request))
         self.set_header('transfer-encoding', 'chunked')
         self.set_header('content-type', 'application/json; charset=utf-8')
@@ -88,13 +89,15 @@ class PublicTimelineHandler(web.RequestHandler):
                 if e.code == 403:
                     json_body = json_decode(e.response.body)
                     if json_body['error_code'] == 10023:
-                        app_logger.warn('access token is blocked, sleep %d 30 minutes.')
-                        yield gen.sleep(30 * 60)
+                        app_logger.warn('access token is blocked')
+                        # yield gen.sleep(30 * 60)
+                        client.set_token(next(weibo_access_tokens))
                 else:
                     app_logger.error('weibo api responded %s, %s, %s',
                                      e.code, e.message, e.response.body if e.response else 'empty response')
                     app_logger.warn('stream closed')
                     self.write('0' + CRLF * 2)
+                    break
 
 
 def on_connection_close(self):
@@ -104,7 +107,7 @@ def on_connection_close(self):
 
 if __name__ == '__main__':
     options.parse_command_line()
-
+    weibo_access_tokens = CircularList(options.weibo_access_tokens)
     app = web.Application([
         (r'/', MainHandler),
         (r'/public_timeline', PublicTimelineHandler)

@@ -1,3 +1,10 @@
+"""
+A set of utility functions and classes.
+"""
+
+from tornado.httputil import HTTPServerRequest
+
+
 class FibonacciSequence:
     """Fibonacci sequence generator
 
@@ -46,3 +53,46 @@ class FibonacciSequence:
         if self._start_from:
             for _ in range(self._start_from):
                 next(self)
+
+
+class CircularList:
+    """A List in a cycle.
+
+    The cycle starts at the 1st item in the input list, and moves to the next one each time called.
+
+    Because a cycle does not have a head, nor tail, it does not make sense to define insert or append function on it.
+
+    :param fixed_list: A list
+
+    >>> cl = CircularList([1, 2, 3])
+    >>> next(cl)
+    1
+    >>> next(cl)
+    2
+    >>> next(cl)
+    3
+    >>> next(cl)
+    1
+    """
+
+    def __init__(self, fixed_list: list):
+        self._list = fixed_list
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        cur = self._list[0]
+        self._list = self._list[1:]
+        self._list.append(cur)
+
+        return cur
+
+
+def remote_ip(request: HTTPServerRequest) -> str:
+    """Try to extract the client IP from the header, or the request.
+
+    :param request: `tornado.httputil.HTTPServerRequest`
+    :return: client IP address
+    """
+    return request.headers.get('X-Real-IP') or request.remote_ip

@@ -11,23 +11,25 @@ class WeiboClient(object):
     """A simple Weibo client
 
     *Instances are not thread safe.*
+
+    :param access_token: Weibo access token
     """
 
     _weibo_public_timeline_url = 'https://api.weibo.com/2/statuses/public_timeline.json?access_token={}&count=50'
 
-    def __init__(self, access_token):
+    def __init__(self, access_token: str):
         self._http_client = AsyncHTTPClient()
         self._access_token = access_token
         self._last_id = 0
 
     @gen.coroutine
-    def public_timeline(self):
+    def public_timeline(self) -> list:
         """Returns a **Future** of a list of statuses from the public timeline API.
 
         * If the remote API response none 200 status code, the status code will be logged.
         * If the remote API raise exception, it will be raised to upstream.
 
-        :rtype: []
+        :return: Weibo statuses on public timeline.
         """
         response = yield self._http_client.fetch(WeiboClient._weibo_public_timeline_url.format(self._access_token))
 
@@ -45,3 +47,12 @@ class WeiboClient(object):
         else:
             logger.error('weibo api responded status %s', response.code)
             return []
+
+    def set_token(self, access_token: str):
+        """
+        Set the Weibo access token to use.
+
+        :type access_token: str
+        :param access_token: Weibo access token
+        """
+        self._access_token = access_token
