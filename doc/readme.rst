@@ -3,11 +3,11 @@ README
 
 Build docker image: ::
 
-    docker build . --tag weibo_stream
+    docker build --tag weibo_stream .
 
 Run docker image: ::
 
-    docker run -d -P weibo_stream --weibo-access-token=some_token
+    docker run -d -P --name weibo_stream weibo_stream --weibo-access-token=some_token
 
 Replace `some_token` with your Weibo API token.
 
