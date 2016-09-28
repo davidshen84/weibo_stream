@@ -83,14 +83,13 @@ class PublicTimelineHandler(web.RequestHandler):
                     app_logger.info('sleep %d seconds', sleep_duration)
                     yield gen.sleep(sleep_duration)
                 else:
-                    access_logger.info('stopped streaming to %s', remote_ip(self.request))
                     break
             except HTTPError as e:
                 if e.code == 403:
                     json_body = json_decode(e.response.body)
                     if json_body['error_code'] == 10023:
                         app_logger.warn('access token is blocked')
-                        # yield gen.sleep(30 * 60)
+                        yield gen.sleep(30 * 60)
                         client.set_token(next(weibo_access_tokens))
                 else:
                     app_logger.error('weibo api responded %s, %s, %s',
@@ -98,6 +97,11 @@ class PublicTimelineHandler(web.RequestHandler):
                     app_logger.warn('stream closed')
                     self.write('0' + CRLF * 2)
                     break
+
+                if self.request.connection.stream.closed():
+                    break
+
+        access_logger.info('stopped streaming to %s', remote_ip(self.request))
 
 
 def on_connection_close(self):
