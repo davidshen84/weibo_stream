@@ -103,10 +103,9 @@ class PublicTimelineHandler(web.RequestHandler):
 
         access_logger.info('stopped streaming to %s', remote_ip(self.request))
 
-
-def on_connection_close(self):
-    access_logger.info('close connection to %s', remote_ip(self.request))
-    self.finish()
+    def on_connection_close(self):
+        access_logger.info('close connection to %s', remote_ip(self.request))
+        self.finish()
 
 
 if __name__ == '__main__':
