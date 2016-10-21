@@ -113,8 +113,7 @@ if __name__ == '__main__':
     weibo_access_tokens = CircularList(options.weibo_access_tokens)
     app = web.Application([
         (r'/', MainHandler),
-        (r'/public_timeline', PublicTimelineHandler)
-    ],
+        (r'/public_timeline', PublicTimelineHandler)],
         debug=options.debug)
     # listen to default HTTP port
     app.listen(80)

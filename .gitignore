@@ -1,1 +1,6 @@
 doc/_build
+.idea/
+__pycache__/
+app/__pycache__/
+doc/_static/
+doc/_templates/
