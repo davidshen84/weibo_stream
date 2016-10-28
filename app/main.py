@@ -78,9 +78,9 @@ class PublicTimelineHandler(web.RequestHandler):
                         sleep_duration = next(fib)
                     else:
                         sleep_duration = next(fib)
-                        app_logger.warn('no new statuses')
+                        app_logger.warn('no new statuses.')
 
-                    app_logger.info('sleep %d seconds', sleep_duration)
+                    app_logger.info('sleep %d seconds.', sleep_duration)
                     yield gen.sleep(sleep_duration)
                 else:
                     break
@@ -88,25 +88,33 @@ class PublicTimelineHandler(web.RequestHandler):
                 if e.code == 403:
                     json_body = json_decode(e.response.body)
                     if json_body['error_code'] == 10023:
-                        app_logger.warn('access token is blocked')
+                        app_logger.warn('access token is blocked.')
                         yield gen.sleep(30 * 60)
                         client.set_token(next(weibo_access_tokens))
                 else:
-                    app_logger.error('weibo api responded %s, %s, %s',
+                    app_logger.error('weibo api responded %s, %s, %s.',
                                      e.code, e.message, e.response.body if e.response else 'empty response')
-                    app_logger.warn('stream closed')
-                    self.write('0' + CRLF * 2)
+
+                    self.__finish()
                     break
 
-                if self.request.connection.stream.closed():
-                    break
+            except ConnectionError as e:
+                app_logger.exception(e.strerror, e, exc_info=True)
+                self.__finish()
+                break
 
-        access_logger.info('stopped streaming to %s', remote_ip(self.request))
-
-    def on_connection_close(self):
-        access_logger.info('close connection to %s', remote_ip(self.request))
+        access_logger.info('stopped streaming to %s.', remote_ip(self.request))
         self.finish()
 
+    def __finish(self):
+        if not self.request.connection.stream.closed():
+            self.finish(chunk='0' + CRLF * 2)
+
+        app_logger.info('stream closed.')
+
+    def on_connection_close(self):
+        access_logger.info('close connection to %s.', remote_ip(self.request))
+        self.finish()
 
 if __name__ == '__main__':
     options.parse_command_line()
