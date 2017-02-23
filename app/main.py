@@ -124,5 +124,8 @@ if __name__ == '__main__':
         (r'/public_timeline', PublicTimelineHandler)],
         debug=options.debug)
     # listen to default HTTP port
-    app.listen(80)
-    ioloop.IOLoop.current().start()
+    app.listen(8080)
+    try:
+        ioloop.IOLoop.current().start()
+    except KeyboardInterrupt:
+        print('bye')
