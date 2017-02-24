@@ -2,8 +2,6 @@
 A set of utility functions and classes.
 """
 
-from tornado.httputil import HTTPServerRequest
-
 
 class FibonacciSequence:
     """Fibonacci sequence generator
@@ -87,12 +85,3 @@ class CircularList:
         self._list.append(cur)
 
         return cur
-
-
-def remote_ip(request: HTTPServerRequest) -> str:
-    """Try to extract the client IP from the header, or the request.
-
-    :param request: `tornado.httputil.HTTPServerRequest`
-    :return: client IP address
-    """
-    return request.headers.get('X-Real-IP') or request.remote_ip

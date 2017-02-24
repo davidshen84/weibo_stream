@@ -1,11 +1,11 @@
 FROM python:3.6
 MAINTAINER Xi Shen <davidshen84@gmail.com>
 
-COPY requirements.txt /app/
-RUN pip install --requirement /app/requirements.txt
+COPY requirements.txt /
+RUN pip3 install --requirement /requirements.txt
 
-COPY app/ /app
+COPY main/src /src
 
 EXPOSE 80
-WORKDIR /app
+WORKDIR /src
 ENTRYPOINT ["python", "main.py"]

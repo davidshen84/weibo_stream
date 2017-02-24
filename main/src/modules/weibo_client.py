@@ -15,7 +15,7 @@ class WeiboClient(object):
     :param access_token: Weibo access token
     """
 
-    _weibo_public_timeline_url = 'https://api.weibo.com/2/statuses/public_timeline.json?access_token={}&count=50'
+    _public_timeline_url_format = 'https://api.weibo.com/2/statuses/public_timeline.json?access_token={}&count=50'
 
     def __init__(self, access_token: str):
         self._http_client = AsyncHTTPClient()
@@ -31,7 +31,7 @@ class WeiboClient(object):
 
         :return: Weibo statuses on public timeline.
         """
-        response = yield self._http_client.fetch(WeiboClient._weibo_public_timeline_url.format(self._access_token))
+        response = yield self._http_client.fetch(WeiboClient._public_timeline_url_format.format(self._access_token))
 
         if response.code == 200:
             json_body = json_decode(response.body)

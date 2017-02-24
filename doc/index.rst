@@ -6,14 +6,17 @@
 Welcome to Weibo Streaming's documentation!
 ===========================================
 
+.. automodule:: main
+
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-   readme
-   weibo_client
-   util
+   controllers
+   modules
+   docker
+
 
 Indices and tables
 ==================

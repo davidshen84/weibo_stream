@@ -1,4 +1,4 @@
-README
+Docker
 ======
 
 Build docker image: ::
