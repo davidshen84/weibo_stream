@@ -1,3 +1,9 @@
+"""
+WeiboClient
+===========
+
+A simple Weibo client.
+"""
 import logging
 
 from tornado import gen

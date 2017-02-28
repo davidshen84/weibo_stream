@@ -1,3 +1,6 @@
+.. automodule:: modules
+   :members:
+
 .. automodule:: modules.util
    :members:
 

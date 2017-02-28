@@ -1,5 +1,8 @@
 """
-A set of utility functions and classes.
+Utility
+=======
+
+Some utility functions and classes.
 """
 
 
