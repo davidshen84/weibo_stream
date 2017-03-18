@@ -20,6 +20,7 @@ from modules import get_mongo_client
 from modules.util import CircularList
 from modules.weibo_client import WeiboClient
 
+define('listen', default=80)
 define('weibo_access_tokens', multiple=True)
 define('mongo_client_factory', default='local')
 define('debug', default=False)
@@ -33,11 +34,10 @@ if __name__ == '__main__':
         (r'/v2/job/(?P<action>\w*)', WeiboStatusCrawlerHandler,
          {'weibo_access_tokens': CircularList(options.weibo_access_tokens),
           'weibo_client_factory': lambda token: WeiboClient(token),
-          'mongo_client': get_mongo_client(options.mongo_client)}, 'job'),
+          'mongo_client': get_mongo_client(options.mongo_client_factory)}, 'job'),
         (r'/.*', DefaultHandler)],
         debug=options.debug)
-    # listen to default HTTP port
-    app.listen(8088)
+    app.listen(options.listen)
     try:
         IOLoop.current().start()
     except KeyboardInterrupt:
