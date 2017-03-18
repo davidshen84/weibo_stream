@@ -1,5 +1,5 @@
 FROM python:3.6
-MAINTAINER Xi Shen <davidshen84@gmail.com>
+LABEL maintainer "Xi Shen <davidshen84@gmail.com>"
 
 COPY requirements.txt /
 RUN pip3 install --requirement /requirements.txt
