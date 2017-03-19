@@ -17,9 +17,8 @@ from tornado.ioloop import IOLoop
 from tornado.options import define, options
 
 from controllers import app_log, DefaultHandler, PublicTimelineHandler, WeiboStatusCrawlerHandler
-from modules import get_mongo_collection, WeiboCrawler
+from modules import WeiboClient, WeiboCrawler, get_mongo_collection
 from modules.util import CircularList
-from modules.weibo_client import WeiboClient
 
 define('listen', default=80)
 define('weibo_access_tokens', multiple=True)
