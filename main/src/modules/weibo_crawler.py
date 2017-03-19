@@ -24,6 +24,11 @@ class WeiboCrawler(PeriodicCallback):
         self._weibo_client = weibo_client
         self._mongo_collection = mongo_collection
 
+        # try to restore last_id
+        last_id = mongo_collection.find_one(projection={'id': 1})
+        if not last_id:
+            self._weibo_client.last_id = last_id
+
     async def async_crawler(self):
         try:
             statuses = await self._weibo_client.public_timeline()

@@ -28,7 +28,7 @@ class WeiboClient(object):
     def __init__(self, access_token: str):
         self._http_client = AsyncHTTPClient()
         self._access_token = access_token
-        self._last_id = 0
+        self.last_id = 0
 
     @gen.coroutine
     def public_timeline(self) -> [Future, list]:
