@@ -3,14 +3,11 @@ Controllers
 ===========
 
 """
-from threading import Lock
 
 from tornado import gen
 from tornado.escape import json_encode, json_decode
 from tornado.httpclient import HTTPError
 from tornado.httputil import HTTPServerRequest
-from tornado.ioloop import IOLoop
-from tornado.locks import Event
 from tornado.log import access_log, app_log
 from tornado.web import RequestHandler
 
@@ -122,57 +119,26 @@ class PublicTimelineHandler(RequestHandler):
 
 class WeiboStatusCrawlerHandler(RequestHandler):
     """
-    Handles Weibo status crawler status.
+    Handles Weibo status crawler.
     """
 
-    _crawler_initialized = False
-    _crawler_initialize_lock = Lock()
-    _crawler_wait_seconds = 10
-    _event = Event()
+    _crawler = None
 
-    @staticmethod
-    async def _async_crawler(weibo_client, collection):
-        """
-        Long run background job to crawl weibo status.
-
-        :return: None
-        """
-        app_log.info('async_weibo_status_crawler started.')
-        while True:
-            await WeiboStatusCrawlerHandler._event.wait()
-            try:
-                statuses = await weibo_client.public_timeline()
-                results = collection.insert_many(statuses)
-                app_log.debug('got statuses count: {}'.format(len(results.inserted_ids)))
-            except TypeError:
-                app_log.warn("sleep longer...zzZ")
-                await gen.sleep(WeiboStatusCrawlerHandler._crawler_wait_seconds)
-            except Exception as e:
-                app_log.exception(e)
-
-            await gen.sleep(WeiboStatusCrawlerHandler._crawler_wait_seconds)
-
-    def initialize(self, weibo_access_tokens, weibo_client_factory, mongo_client):
-        statuses_collection = mongo_client['weibo']['statuses']
-
-        if not self._crawler_initialized and WeiboStatusCrawlerHandler._crawler_initialize_lock.acquire():
-            if not self._crawler_initialized:
-                IOLoop.current().spawn_callback(WeiboStatusCrawlerHandler._async_crawler,
-                                                weibo_client_factory(next(weibo_access_tokens)),
-                                                statuses_collection)
-                WeiboStatusCrawlerHandler._crawler_initialized = True
-            WeiboStatusCrawlerHandler._crawler_initialize_lock.release()
+    def initialize(self, weibo_crawler):
+        self._crawler = weibo_crawler
 
     def data_received(self, chunk):
         raise NotImplementedError()
 
     def get(self, action):
         unknown_action = None
-        if action == 'start' and not self._event.is_set():
-            self._event.set()
-        elif action == 'stop' and self._event.is_set():
-            self._event.clear()
+        if action == 'start':
+            if not self._crawler.is_running():
+                self._crawler.start()
+        elif action == 'stop':
+            if self._crawler.is_running():
+                self._crawler.stop()
         elif action != '':
             unknown_action = action
 
-        self.render('weibo_crawler_status.html', unknown_action=unknown_action, is_set=self._event.is_set())
+        self.render('weibo_crawler_status.html', unknown_action=unknown_action, is_running=self._crawler.is_running())

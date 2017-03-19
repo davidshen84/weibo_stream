@@ -7,6 +7,7 @@ A simple Weibo client.
 import logging
 
 from tornado import gen
+from tornado.concurrent import Future
 from tornado.escape import json_decode
 from tornado.httpclient import AsyncHTTPClient
 
@@ -21,7 +22,7 @@ class WeiboClient(object):
     :param access_token: Weibo access token
     """
 
-    _public_timeline_url_format = 'https://api.weibo.com/2/statuses/public_timeline.json?access_token={}&count=50'
+    _public_timeline_url_format = 'https://api.weibo.com/2/statuses/public_timeline.json?access_token={}&count=200'
 
     def __init__(self, access_token: str):
         self._http_client = AsyncHTTPClient()
@@ -29,7 +30,7 @@ class WeiboClient(object):
         self._last_id = 0
 
     @gen.coroutine
-    def public_timeline(self) -> list:
+    def public_timeline(self) -> [Future, list]:
         """Returns a **Future** of a list of statuses from the public timeline API.
 
         * If the remote API response none 200 status code, the status code will be logged.
